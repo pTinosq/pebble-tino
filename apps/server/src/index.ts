@@ -10,9 +10,25 @@ import http from "node:http";
 import { PORT, ASSISTANT_TOKEN, OPENROUTER_API_KEY, mcpServers } from "./config.js";
 import { McpManager } from "./mcp.js";
 import { askAssistant } from "./llm.js";
+import { NOTION_MCP_URL, getNotionAccessToken, tokensExist } from "./notionAuth.js";
 
 const mcp = new McpManager();
-await mcp.connect(mcpServers());
+const servers = mcpServers();
+
+// Notion via OAuth tokens from `just setup-notion` (if connected).
+if (tokensExist()) {
+  try {
+    const token = await getNotionAccessToken();
+    servers.unshift({ key: "notion", url: NOTION_MCP_URL, token });
+    console.log("[notion] tokens found — Notion MCP enabled");
+  } catch (err) {
+    console.error("[notion] token load/refresh failed:", err);
+  }
+} else {
+  console.log("[notion] not connected — run `just setup-notion` to enable");
+}
+
+await mcp.connect(servers);
 
 if (!OPENROUTER_API_KEY) {
   console.warn("[warn] OPENROUTER_API_KEY is not set — /ask will fail until it is.");

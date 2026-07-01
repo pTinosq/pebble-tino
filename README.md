@@ -84,10 +84,20 @@ Each service authenticates via OAuth. Official remote endpoints:
 | Gmail           | Google Workspace remote MCP      |
 | Google Calendar | Google Workspace remote MCP      |
 
-Obtain an access token per service and set `*_MCP_TOKEN` in the backend env.
-Tokens are short-lived (Notion ~1h) — `src/oauth.ts` has the refresh helper;
-wiring automatic refresh is the next milestone. Start with **Notion only** to
-get the loop working end-to-end, then add Gmail/Calendar.
+**Notion** (implemented): OAuth-only, no static token. Connect it with:
+
+```bash
+just setup-notion     # one-time browser login (PKCE + dynamic registration)
+just dev              # restart — Notion tools now load
+just ask "what's on my Notion tasks?"
+```
+
+Tokens are stored in `apps/server/.notion-tokens.json` (gitignored) and
+auto-refreshed. Gmail/Calendar are wired the same way next.
+
+> Note: this runs **locally**. On Railway the filesystem is ephemeral, so
+> Notion tokens don't persist across deploys yet — prod needs a volume or a
+> persistent token store (follow-up).
 
 ## Deploy to Railway
 

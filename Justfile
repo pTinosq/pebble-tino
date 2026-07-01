@@ -20,6 +20,10 @@ setup:
 install:
     npm install
 
+# connect your Notion account via OAuth (one-time browser login)
+setup-notion:
+    npm --workspace apps/server run auth:notion
+
 # --- backend (apps/server) ---
 
 # run the backend locally with hot reload

@@ -15,8 +15,8 @@ export const PORT = Number(process.env.PORT ?? 8080);
 
 // Returns only the MCP servers that have a URL configured.
 export function mcpServers(): McpServerConfig[] {
+  // Notion is handled separately (OAuth, via notionAuth.ts), not env tokens.
   const defs: Array<{ key: string; url?: string; token?: string }> = [
-    { key: "notion", url: process.env.NOTION_MCP_URL, token: process.env.NOTION_MCP_TOKEN },
     { key: "gmail", url: process.env.GMAIL_MCP_URL, token: process.env.GMAIL_MCP_TOKEN },
     { key: "gcal", url: process.env.GCAL_MCP_URL, token: process.env.GCAL_MCP_TOKEN },
   ];
