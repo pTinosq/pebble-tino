@@ -10,12 +10,13 @@ import http from "node:http";
 import { PORT, ASSISTANT_TOKEN, OPENROUTER_API_KEY, mcpServers } from "./config.js";
 import { McpManager } from "./mcp.js";
 import { askAssistant } from "./llm.js";
-import { NOTION_MCP_URL, getNotionAccessToken, tokensExist } from "./notionAuth.js";
+import { NOTION_MCP_URL, getNotionAccessToken, tokensExist, seedTokensIfNeeded } from "./notionAuth.js";
 
 const mcp = new McpManager();
 const servers = mcpServers();
 
 // Notion via OAuth tokens from `just setup-notion` (if connected).
+seedTokensIfNeeded(); // prod: write seed to the volume on first boot
 if (tokensExist()) {
   try {
     const token = await getNotionAccessToken();

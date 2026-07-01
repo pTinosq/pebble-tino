@@ -16,7 +16,10 @@ export const NOTION_MCP_URL = `${MCP_BASE}/mcp`;
 const RESOURCE = MCP_BASE; // RFC 8707 resource identifier
 const REDIRECT_PORT = 8787;
 const REDIRECT_URI = `http://localhost:${REDIRECT_PORT}/callback`;
-const TOKENS_PATH = resolve(process.cwd(), ".notion-tokens.json");
+// Configurable so prod can point at a persistent volume (e.g. /data).
+const TOKENS_PATH = process.env.NOTION_TOKENS_PATH
+  ? resolve(process.env.NOTION_TOKENS_PATH)
+  : resolve(process.cwd(), ".notion-tokens.json");
 
 interface OAuthMeta {
   authorization_endpoint: string;
@@ -77,6 +80,21 @@ function loadTokens(): Tokens {
 
 export function tokensExist(): boolean {
   return existsSync(TOKENS_PATH);
+}
+
+// Prod bootstrap: if no token file exists yet but a base64 seed is provided
+// (NOTION_TOKENS_SEED), write it once. Subsequent rotations persist to
+// TOKENS_PATH — point that at a persistent volume in prod.
+export function seedTokensIfNeeded(): void {
+  if (existsSync(TOKENS_PATH)) return;
+  const seed = process.env.NOTION_TOKENS_SEED;
+  if (!seed) return;
+  try {
+    writeFileSync(TOKENS_PATH, Buffer.from(seed, "base64").toString("utf8"));
+    console.log(`[notion] seeded tokens to ${TOKENS_PATH}`);
+  } catch (err) {
+    console.error("[notion] failed to seed tokens:", err);
+  }
 }
 
 // One-time interactive login. Run via `npm run auth:notion` / `just setup-notion`.
