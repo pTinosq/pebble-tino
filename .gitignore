@@ -5,6 +5,7 @@ dist/
 # secrets
 .env
 .env.local
+apps/watch/src/pkjs/secrets.js
 
 # pebble build artifacts
 apps/watch/build/

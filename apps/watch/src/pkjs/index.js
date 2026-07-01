@@ -2,11 +2,11 @@
 // Sends the dictated question to the Pebble Assistant backend and returns the
 // answer to the watch. No API keys live here anymore — the backend holds them.
 //
-// Set BACKEND_URL to your deployed Railway URL, and ASSISTANT_TOKEN to the same
-// value you set for ASSISTANT_TOKEN in the server's environment. These are local
-// config — do not commit real values to a public repo.
-var BACKEND_URL = 'https://YOUR-APP.up.railway.app/ask';
-var ASSISTANT_TOKEN = ''; // must match the server's ASSISTANT_TOKEN (leave '' if unset)
+// Config + secrets live in secrets.js (gitignored). First run:
+//   cp secrets.example.js secrets.js   and fill in your values.
+var secrets = require('./secrets');
+var BACKEND_URL = secrets.BACKEND_URL;
+var ASSISTANT_TOKEN = secrets.ASSISTANT_TOKEN;
 
 var MAX_ANSWER_CHARS = 1200; // must stay under the watch inbox buffer
 
