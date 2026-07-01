@@ -1,0 +1,14 @@
+{
+  "name": "pebble-assistant",
+  "private": true,
+  "version": "1.0.0",
+  "description": "Voice assistant on a Pebble Time 2, backed by an LLM with Notion/Gmail/Calendar tools",
+  "workspaces": [
+    "apps/server"
+  ],
+  "scripts": {
+    "dev": "npm --workspace apps/server run dev",
+    "build": "npm --workspace apps/server run build",
+    "start": "npm --workspace apps/server start"
+  }
+}

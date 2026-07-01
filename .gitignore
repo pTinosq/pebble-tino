@@ -1,0 +1,16 @@
+# deps & build
+node_modules/
+dist/
+
+# secrets
+.env
+.env.local
+
+# pebble build artifacts
+apps/watch/build/
+apps/watch/.lock-waf*
+*.pbw
+
+# misc
+.DS_Store
+*.log
