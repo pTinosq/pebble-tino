@@ -24,6 +24,20 @@ apps/
 The `server/` folder is an **MCP client** — it connects to the remote MCP
 servers for Notion/Gmail/Calendar and exposes their tools to the LLM.
 
+## Quick start (Justfile)
+
+Common tasks are wrapped in a [`Justfile`](./Justfile) (`brew install just`):
+
+```bash
+just            # list all recipes
+just setup      # create .env + secrets.js from templates
+just install    # install deps
+just dev        # run the backend locally
+just watch-install   # build + install the watch app (CloudPebble)
+just health     # ping the deployed backend
+just ask "what is on my calendar today"
+```
+
 ## Secrets & `.env`
 
 **No secrets live in this repo.** All keys and tokens come from environment
