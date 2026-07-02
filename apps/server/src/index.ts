@@ -11,6 +11,7 @@ import { PORT, ASSISTANT_TOKEN, OPENROUTER_API_KEY, mcpServers } from "./config.
 import { McpManager } from "./mcp.js";
 import { askAssistant, type TurnMessage } from "./llm.js";
 import { NOTION_MCP_URL, getNotionAccessToken, tokensExist, seedTokensIfNeeded } from "./notionAuth.js";
+import { googleTokensExist, getGoogleAccessToken, googleServers, seedGoogleIfNeeded } from "./googleAuth.js";
 
 const mcp = new McpManager();
 const servers = mcpServers();
@@ -27,6 +28,20 @@ if (tokensExist()) {
   }
 } else {
   console.log("[notion] not connected — run `just setup-notion` to enable");
+}
+
+// Google (Calendar/Gmail) via OAuth tokens from `just setup-google` (if connected).
+seedGoogleIfNeeded();
+if (googleTokensExist()) {
+  try {
+    const token = await getGoogleAccessToken();
+    for (const s of googleServers(token)) servers.push(s);
+    console.log("[google] tokens found — Google MCP enabled");
+  } catch (err) {
+    console.error("[google] token load/refresh failed:", err);
+  }
+} else {
+  console.log("[google] not connected — run `just setup-google` to enable");
 }
 
 await mcp.connect(servers);

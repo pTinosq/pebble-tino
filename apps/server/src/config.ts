@@ -15,14 +15,7 @@ export const PORT = Number(process.env.PORT ?? 8080);
 
 // Returns only the MCP servers that have a URL configured.
 export function mcpServers(): McpServerConfig[] {
-  // Notion is handled separately (OAuth, via notionAuth.ts), not env tokens.
-  const defs: Array<{ key: string; url?: string; token?: string }> = [
-    { key: "gmail", url: process.env.GMAIL_MCP_URL, token: process.env.GMAIL_MCP_TOKEN },
-    { key: "gcal", url: process.env.GCAL_MCP_URL, token: process.env.GCAL_MCP_TOKEN },
-  ];
-  const out: McpServerConfig[] = [];
-  for (const d of defs) {
-    if (d.url) out.push({ key: d.key, url: d.url, token: d.token });
-  }
-  return out;
+  // Notion and Google are OAuth-managed (notionAuth.ts / googleAuth.ts) and
+  // added at startup in index.ts. Add any static-token MCP servers here.
+  return [];
 }

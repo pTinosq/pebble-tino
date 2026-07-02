@@ -10,7 +10,8 @@
     "dev": "tsx watch src/index.ts",
     "build": "tsc",
     "start": "node dist/index.js",
-    "auth:notion": "tsx src/auth-notion.ts"
+    "auth:notion": "tsx src/auth-notion.ts",
+    "auth:google": "tsx src/auth-google.ts"
   },
   "dependencies": {
     "@modelcontextprotocol/sdk": "^1.0.0",
