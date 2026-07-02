@@ -16,32 +16,41 @@ import { slackTokensExist, getSlackAccessToken, slackServers, seedSlackIfNeeded 
 const mcp = new McpManager();
 const servers = mcpServers();
 
-// Notion via OAuth tokens from `just setup-notion` (if connected).
-seedTokensIfNeeded(); // prod: write seed to the volume on first boot
-if (tokensExist()) {
-  try {
-    const token = await getNotionAccessToken();
-    servers.unshift({ key: "notion", url: NOTION_MCP_URL, token });
-    console.log("[notion] tokens found — Notion MCP enabled");
-  } catch (err) {
-    console.error("[notion] token load/refresh failed:", err);
-  }
-} else {
-  console.log("[notion] not connected — run `just setup-notion` to enable");
-}
+// Local dev sets DISABLE_MCP_AUTH=1 so it does NOT load/refresh the OAuth tokens.
+// Prod owns those tokens; a second consumer refreshing them triggers provider
+// reuse-detection and revokes prod (this bit us repeatedly with Notion).
+const skipMcpAuth = process.env.DISABLE_MCP_AUTH === "1";
 
-// Slack via OAuth tokens from `just setup-slack` (if connected).
-seedSlackIfNeeded();
-if (slackTokensExist()) {
-  try {
-    const token = await getSlackAccessToken();
-    for (const s of slackServers(token)) servers.push(s);
-    console.log("[slack] tokens found — Slack MCP enabled");
-  } catch (err) {
-    console.error("[slack] token load/refresh failed:", err);
-  }
+if (skipMcpAuth) {
+  console.log("[dev] DISABLE_MCP_AUTH=1 — skipping Notion/Slack so prod keeps its tokens");
 } else {
-  console.log("[slack] not connected — run `just setup-slack` to enable");
+  // Notion via OAuth tokens from `just setup-notion` (if connected).
+  seedTokensIfNeeded(); // prod: write seed to the volume on first boot
+  if (tokensExist()) {
+    try {
+      const token = await getNotionAccessToken();
+      servers.unshift({ key: "notion", url: NOTION_MCP_URL, token });
+      console.log("[notion] tokens found — Notion MCP enabled");
+    } catch (err) {
+      console.error("[notion] token load/refresh failed:", err);
+    }
+  } else {
+    console.log("[notion] not connected — run `just setup-notion` to enable");
+  }
+
+  // Slack via OAuth tokens from `just setup-slack` (if connected).
+  seedSlackIfNeeded();
+  if (slackTokensExist()) {
+    try {
+      const token = await getSlackAccessToken();
+      for (const s of slackServers(token)) servers.push(s);
+      console.log("[slack] tokens found — Slack MCP enabled");
+    } catch (err) {
+      console.error("[slack] token load/refresh failed:", err);
+    }
+  } else {
+    console.log("[slack] not connected — run `just setup-slack` to enable");
+  }
 }
 
 await mcp.connect(servers);

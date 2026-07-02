@@ -7,7 +7,7 @@
     "node": ">=20"
   },
   "scripts": {
-    "dev": "tsx watch src/index.ts",
+    "dev": "DISABLE_MCP_AUTH=1 tsx watch src/index.ts",
     "build": "tsc",
     "start": "node dist/index.js",
     "auth:notion": "tsx src/auth-notion.ts",
