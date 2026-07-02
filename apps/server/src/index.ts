@@ -9,7 +9,7 @@ import "dotenv/config";
 import http from "node:http";
 import { PORT, ASSISTANT_TOKEN, OPENROUTER_API_KEY, mcpServers } from "./config.js";
 import { McpManager } from "./mcp.js";
-import { askAssistant } from "./llm.js";
+import { askAssistant, type TurnMessage } from "./llm.js";
 import { NOTION_MCP_URL, getNotionAccessToken, tokensExist, seedTokensIfNeeded } from "./notionAuth.js";
 
 const mcp = new McpManager();
@@ -56,12 +56,22 @@ const server = http.createServer((req, res) => {
     req.on("data", (chunk) => (body += chunk));
     req.on("end", async () => {
       try {
-        const { question } = JSON.parse(body || "{}") as { question?: string };
-        if (!question) {
+        const parsed = JSON.parse(body || "{}") as {
+          question?: string;
+          history?: Array<{ role?: string; content?: string }>;
+        };
+        if (!parsed.question) {
           send(res, 400, { error: "missing 'question'" });
           return;
         }
-        const answer = await askAssistant(question, mcp);
+        // Sanitize + cap the client-supplied history (last 12 turns).
+        const history = (Array.isArray(parsed.history) ? parsed.history : [])
+          .filter(
+            (m): m is TurnMessage =>
+              (m.role === "user" || m.role === "assistant") && typeof m.content === "string",
+          )
+          .slice(-12);
+        const answer = await askAssistant(parsed.question, mcp, history);
         send(res, 200, { response: answer });
       } catch (err) {
         console.error("[/ask] error:", err);

@@ -35,12 +35,23 @@ interface ChatMessage {
   tool_call_id?: string;
 }
 
-export async function askAssistant(question: string, mcp: McpManager): Promise<string> {
+// Prior conversation turns sent by the client (final Q/A pairs only).
+export interface TurnMessage {
+  role: "user" | "assistant";
+  content: string;
+}
+
+export async function askAssistant(
+  question: string,
+  mcp: McpManager,
+  history: TurnMessage[] = [],
+): Promise<string> {
   if (!OPENROUTER_API_KEY) throw new Error("OPENROUTER_API_KEY is not set");
 
   const tools = mcp.getOpenAITools();
   const messages: ChatMessage[] = [
     { role: "system", content: systemPrompt() },
+    ...history,
     { role: "user", content: question },
   ];
 
