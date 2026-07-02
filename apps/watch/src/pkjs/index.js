@@ -8,7 +8,8 @@ var secrets = require('./secrets');
 var BACKEND_URL = secrets.BACKEND_URL;
 var ASSISTANT_TOKEN = secrets.ASSISTANT_TOKEN;
 
-var MAX_ANSWER_CHARS = 2000; // must stay under the watch inbox buffer
+var MAX_ANSWER_CHARS = 3000; // safety cap; matches the watch answer buffer
+var CHUNK_SIZE = 200;        // per-AppMessage chunk, well under the inbox
 
 // Conversation history (prior turns) for multi-turn context. Reset when the
 // watch sends reset=1 (new conversation).
@@ -24,12 +25,26 @@ function sendToWatch(dict) {
 }
 
 function sendResponse(text) {
-  if (!text) text = '(empty response)';
-  text = String(text).trim();
-  if (text.length > MAX_ANSWER_CHARS) {
-    text = text.substring(0, MAX_ANSWER_CHARS - 3) + '...';
+  text = String(text || '(empty response)').trim();
+  if (text.length > MAX_ANSWER_CHARS) text = text.substring(0, MAX_ANSWER_CHARS);
+  var chunks = [];
+  for (var i = 0; i < text.length; i += CHUNK_SIZE) {
+    chunks.push(text.substr(i, CHUNK_SIZE));
   }
-  sendToWatch({ response: text });
+  if (chunks.length === 0) chunks.push('');
+  sendChunk(chunks, 0);
+}
+
+// Pebble processes one AppMessage at a time, so send each chunk only after the
+// previous is acked. `more` = 1 until the final chunk, so the watch knows when
+// the full answer has arrived.
+function sendChunk(chunks, i) {
+  var more = i < chunks.length - 1 ? 1 : 0;
+  Pebble.sendAppMessage(
+    { response: chunks[i], more: more },
+    function () { if (more) sendChunk(chunks, i + 1); },
+    function (e) { console.log('chunk ' + i + ' send failed: ' + JSON.stringify(e)); }
+  );
 }
 
 function sendError(msg) {

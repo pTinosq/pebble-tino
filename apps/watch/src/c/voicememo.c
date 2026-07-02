@@ -8,9 +8,10 @@
 //   UP / DOWN           -> scroll the current answer
 
 #define QUESTION_SIZE 256
-#define DISPLAY_SIZE  3072   // "Q: ...\n\n<answer up to ~2000>"
-#define MAX_TURNS     6      // stored turns for BACK navigation
-#define TURN_SIZE     2400   // per-turn "Q: ...\n\n<answer>"
+#define ANSWER_SIZE   3072   // accumulated answer (assembled from chunks)
+#define DISPLAY_SIZE  3400   // "Q: ...\n\n<answer>"
+#define MAX_TURNS     3      // stored turns for BACK navigation
+#define TURN_SIZE     3400   // per-turn "Q: ...\n\n<answer>"
 
 static Window *s_window;
 static TextLayer *s_text_layer;
@@ -19,6 +20,7 @@ static DictationSession *s_dictation;
 
 static char s_question[QUESTION_SIZE];
 static char s_display[DISPLAY_SIZE];
+static char s_answer[ANSWER_SIZE]; // accumulates chunked response text
 
 static char s_turns[MAX_TURNS][TURN_SIZE];
 static int s_turn_count = 0;      // number of stored turns
@@ -55,6 +57,7 @@ static void store_turn(const char *text) {
 // ---- Sending the question to the phone ----
 
 static void send_question(void) {
+  s_answer[0] = '\0'; // reset the accumulator for the new reply
   DictionaryIterator *out;
   AppMessageResult res = app_message_outbox_begin(&out);
   if (res != APP_MSG_OK) {
@@ -78,11 +81,20 @@ static void inbox_received(DictionaryIterator *iter, void *context) {
   Tuple *err  = dict_find(iter, MESSAGE_KEY_error);
 
   if (resp) {
-    snprintf(s_display, sizeof(s_display), "Q: %s\n\n%s",
-             s_question, resp->value->cstring);
-    store_turn(s_display);
+    // Append this chunk to the accumulated answer, then render progressively.
+    size_t used = strlen(s_answer);
+    if (used < ANSWER_SIZE - 1) {
+      strncat(s_answer, resp->value->cstring, ANSWER_SIZE - 1 - used);
+    }
+    Tuple *more_t = dict_find(iter, MESSAGE_KEY_more);
+    int more = more_t ? more_t->value->int32 : 0;
+
+    snprintf(s_display, sizeof(s_display), "Q: %s\n\n%s", s_question, s_answer);
     show_text(s_display);
-    vibes_short_pulse(); // buzz when the answer arrives
+    if (!more) {
+      store_turn(s_display);   // full answer received
+      vibes_short_pulse();
+    }
   } else if (err) {
     snprintf(s_display, sizeof(s_display), "Error:\n%s\n\nPress SELECT to retry.",
              err->value->cstring);

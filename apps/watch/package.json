@@ -26,7 +26,8 @@
       "prompt",
       "response",
       "error",
-      "reset"
+      "reset",
+      "more"
     ],
     "resources": {
       "media": []
