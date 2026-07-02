@@ -32,6 +32,7 @@ const REDIRECT_URI = `http://localhost:${REDIRECT_PORT}/callback`;
 const SCOPES = (
   process.env.GOOGLE_SCOPES ??
   [
+    "https://www.googleapis.com/auth/calendar.calendarlist",
     "https://www.googleapis.com/auth/calendar.events",
     "https://www.googleapis.com/auth/gmail.modify",
   ].join(" ")
