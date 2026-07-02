@@ -24,7 +24,9 @@ function systemPrompt(): string {
     "3. Only state what a tool actually returned — never invent titles, events, or data.",
     "4. Output ONLY the final answer for the user. Do NOT narrate or mention which",
     "   tools or queries you used (no 'Calling tool…', no 'Responding to tool…').",
-    "5. Reply in plain text (no markdown), and keep it under 350 characters.",
+    "5. Reply in plain text (no markdown). Be concise — under 1000 characters —",
+    "   but ALWAYS include every item the user asked for (if they ask for 3 things,",
+    "   give all 3, each on its own short line).",
   ].join(" ");
 }
 
