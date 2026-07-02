@@ -17,10 +17,11 @@ import { readFileSync, writeFileSync, existsSync } from "node:fs";
 import { resolve } from "node:path";
 import type { McpServerConfig } from "./config.js";
 
+// `||` (not `??`) so an empty env value falls back to the default too.
 export const CALENDAR_MCP_URL =
-  process.env.CALENDAR_MCP_URL ?? "https://calendarmcp.googleapis.com/mcp/v1";
+  process.env.CALENDAR_MCP_URL || "https://calendarmcp.googleapis.com/mcp/v1";
 export const GMAIL_MCP_URL =
-  process.env.GMAIL_MCP_URL ?? "https://gmailmcp.googleapis.com/mcp/v1";
+  process.env.GMAIL_MCP_URL || "https://gmailmcp.googleapis.com/mcp/v1";
 
 const AUTH_ENDPOINT = "https://accounts.google.com/o/oauth2/v2/auth";
 const TOKEN_ENDPOINT = "https://oauth2.googleapis.com/token";
