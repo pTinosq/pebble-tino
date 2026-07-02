@@ -86,12 +86,15 @@ export function tokensExist(): boolean {
 // (NOTION_TOKENS_SEED), write it once. Subsequent rotations persist to
 // TOKENS_PATH — point that at a persistent volume in prod.
 export function seedTokensIfNeeded(): void {
-  if (existsSync(TOKENS_PATH)) return;
+  // NOTION_TOKENS_SEED_FORCE=1 overwrites an existing (e.g. revoked) token file
+  // on the volume. Set it for one deploy to re-seed, then remove it.
+  const force = process.env.NOTION_TOKENS_SEED_FORCE === "1";
+  if (existsSync(TOKENS_PATH) && !force) return;
   const seed = process.env.NOTION_TOKENS_SEED;
   if (!seed) return;
   try {
     writeFileSync(TOKENS_PATH, Buffer.from(seed, "base64").toString("utf8"));
-    console.log(`[notion] seeded tokens to ${TOKENS_PATH}`);
+    console.log(`[notion] seeded tokens to ${TOKENS_PATH}${force ? " (forced overwrite)" : ""}`);
   } catch (err) {
     console.error("[notion] failed to seed tokens:", err);
   }
