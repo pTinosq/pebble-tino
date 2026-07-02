@@ -24,6 +24,10 @@ install:
 setup-notion:
     npm --workspace apps/server run auth:notion
 
+# connect your Slack workspace via OAuth (needs a Slack app; one-time browser login)
+setup-slack:
+    npm --workspace apps/server run auth:slack
+
 # --- backend (apps/server) ---
 
 # run the backend locally with hot reload

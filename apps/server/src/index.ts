@@ -11,6 +11,7 @@ import { PORT, ASSISTANT_TOKEN, OPENROUTER_API_KEY, mcpServers } from "./config.
 import { McpManager } from "./mcp.js";
 import { askAssistant, type TurnMessage } from "./llm.js";
 import { NOTION_MCP_URL, getNotionAccessToken, tokensExist, seedTokensIfNeeded } from "./notionAuth.js";
+import { slackTokensExist, getSlackAccessToken, slackServers, seedSlackIfNeeded } from "./slackAuth.js";
 
 const mcp = new McpManager();
 const servers = mcpServers();
@@ -27,6 +28,20 @@ if (tokensExist()) {
   }
 } else {
   console.log("[notion] not connected — run `just setup-notion` to enable");
+}
+
+// Slack via OAuth tokens from `just setup-slack` (if connected).
+seedSlackIfNeeded();
+if (slackTokensExist()) {
+  try {
+    const token = await getSlackAccessToken();
+    for (const s of slackServers(token)) servers.push(s);
+    console.log("[slack] tokens found — Slack MCP enabled");
+  } catch (err) {
+    console.error("[slack] token load/refresh failed:", err);
+  }
+} else {
+  console.log("[slack] not connected — run `just setup-slack` to enable");
 }
 
 await mcp.connect(servers);
