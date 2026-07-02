@@ -92,9 +92,12 @@ static void inbox_received(DictionaryIterator *iter, void *context) {
     Tuple *more_t = dict_find(iter, MESSAGE_KEY_more);
     int more = more_t ? (int) more_t->value->int32 : -1; // -1 = key missing
 
-    // TEMP debug footer: chunks received, chars accumulated, more-flag value.
-    snprintf(s_display, sizeof(s_display), "Q: %s\n\n%s\n\n[k=%d c=%d more=%d]",
-             s_question, s_answer, s_chunks, (int) strlen(s_answer), more);
+    APP_LOG(APP_LOG_LEVEL_INFO, "chunk k=%d c=%d more=%d",
+            s_chunks, (int) strlen(s_answer), more);
+
+    // TEMP debug at TOP so it's visible even if the bottom is clipped.
+    snprintf(s_display, sizeof(s_display), "[k=%d c=%d more=%d]\n\n%s",
+             s_chunks, (int) strlen(s_answer), more, s_answer);
     show_text(s_display);
     if (more == 0) {
       store_turn(s_display);   // full answer received
