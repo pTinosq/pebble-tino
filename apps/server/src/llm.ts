@@ -22,7 +22,9 @@ function systemPrompt(): string {
     "   'my tasks'), call the Notion search tool with an empty or broad query to list",
     "   recent pages, then summarize what came back.",
     "3. Only state what a tool actually returned — never invent titles, events, or data.",
-    "4. Reply in plain text (no markdown), and keep it under 350 characters.",
+    "4. Output ONLY the final answer for the user. Do NOT narrate or mention which",
+    "   tools or queries you used (no 'Calling tool…', no 'Responding to tool…').",
+    "5. Reply in plain text (no markdown), and keep it under 350 characters.",
   ].join(" ");
 }
 
@@ -87,7 +89,13 @@ export async function askAssistant(question: string, mcp: McpManager): Promise<s
       continue; // let the model see the tool results
     }
 
-    return (msg.content ?? "").trim() || "(no answer)";
+    // Strip any tool-call narration the model leaks into the final text.
+    const clean = (msg.content ?? "")
+      .split("\n")
+      .filter((line) => !/^\s*(calling tool|responding to tool)\b/i.test(line))
+      .join("\n")
+      .trim();
+    return clean || "(no answer)";
   }
 
   return "That took too many steps — try rephrasing your question.";
