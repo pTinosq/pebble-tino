@@ -3,31 +3,23 @@
 // executes any tool calls the model makes, and loops until it produces a final
 // text answer for the watch.
 
+import { readFileSync } from "node:fs";
+import { fileURLToPath } from "node:url";
+import { dirname, resolve } from "node:path";
 import { MODEL, OPENROUTER_API_KEY } from "./config.js";
 import type { McpManager } from "./mcp.js";
 
 const MAX_STEPS = 6;
 
+// System prompt lives in prompts/system.md (edit it there, not here).
+// Resolved relative to this module so it works under both tsx (src/) and the
+// compiled build (dist/); {{today}} is filled in at request time.
+const PROMPT_PATH = resolve(dirname(fileURLToPath(import.meta.url)), "..", "prompts", "system.md");
+const PROMPT_TEMPLATE = readFileSync(PROMPT_PATH, "utf8");
+
 function systemPrompt(): string {
   const today = new Date().toISOString().slice(0, 10);
-  return [
-    "You are a voice assistant on a Pebble smartwatch. The user speaks a question",
-    "and reads a short answer — they CANNOT type or answer follow-up questions.",
-    `Today is ${today}.`,
-    "You have tools to search and act on the user's Notion, Gmail, and Google Calendar.",
-    "RULES:",
-    "1. NEVER reply with a clarifying question. If a request needs data, immediately",
-    "   call a tool with your best-guess arguments.",
-    "2. For a general Notion request (e.g. 'what's on my Notion', 'search my notion',",
-    "   'my tasks'), call the Notion search tool with an empty or broad query to list",
-    "   recent pages, then summarize what came back.",
-    "3. Only state what a tool actually returned — never invent titles, events, or data.",
-    "4. Output ONLY the final answer for the user. Do NOT narrate or mention which",
-    "   tools or queries you used (no 'Calling tool…', no 'Responding to tool…').",
-    "5. Reply in plain text (no markdown). Be concise — under 1000 characters —",
-    "   but ALWAYS include every item the user asked for (if they ask for 3 things,",
-    "   give all 3, each on its own short line).",
-  ].join(" ");
+  return PROMPT_TEMPLATE.replace(/\{\{\s*today\s*\}\}/g, today).trim();
 }
 
 interface ToolCall {
