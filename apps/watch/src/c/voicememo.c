@@ -58,10 +58,12 @@ static void inbox_received(DictionaryIterator *iter, void *context) {
     snprintf(s_display, sizeof(s_display), "Q: %s\n\n%s",
              s_question, resp->value->cstring);
     show_text(s_display);
+    vibes_short_pulse(); // buzz when the answer arrives
   } else if (err) {
     snprintf(s_display, sizeof(s_display), "Error:\n%s\n\nPress SELECT to retry.",
              err->value->cstring);
     show_text(s_display);
+    vibes_double_pulse(); // distinct buzz for errors
   }
 }
 
