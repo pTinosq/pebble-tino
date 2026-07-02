@@ -61,17 +61,6 @@ const server = http.createServer((req, res) => {
     return;
   }
 
-  // Temporary diagnostic: GET /debug/<tool> calls a tool directly, returns raw.
-  if (req.method === "GET" && req.url && req.url.startsWith("/debug/")) {
-    if (ASSISTANT_TOKEN && req.headers["x-assistant-token"] !== ASSISTANT_TOKEN) {
-      send(res, 401, { error: "unauthorized" });
-      return;
-    }
-    const tool = decodeURIComponent(req.url.slice("/debug/".length));
-    void mcp.callTool(tool, {}).then((raw) => send(res, 200, { tool, raw }));
-    return;
-  }
-
   if (req.method === "POST" && req.url === "/ask") {
     if (ASSISTANT_TOKEN && req.headers["x-assistant-token"] !== ASSISTANT_TOKEN) {
       send(res, 401, { error: "unauthorized" });
