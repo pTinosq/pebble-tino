@@ -27,16 +27,16 @@ const TOKEN_ENDPOINT = "https://oauth2.googleapis.com/token";
 const REDIRECT_PORT = 8788;
 const REDIRECT_URI = `http://localhost:${REDIRECT_PORT}/callback`;
 
-// Calendar-only by default (lighter than Gmail). To add Gmail, also add these
-// to the consent screen and append them here:
-//   https://www.googleapis.com/auth/gmail.readonly
-//   https://www.googleapis.com/auth/gmail.compose
+// Calendar + Gmail. These must match the scopes added on the OAuth consent
+// screen, or the login will fail.
 const SCOPES = (
   process.env.GOOGLE_SCOPES ??
   [
     "https://www.googleapis.com/auth/calendar.calendarlist.readonly",
     "https://www.googleapis.com/auth/calendar.events.readonly",
     "https://www.googleapis.com/auth/calendar.events.freebusy",
+    "https://www.googleapis.com/auth/gmail.readonly",
+    "https://www.googleapis.com/auth/gmail.compose",
   ].join(" ")
 ).trim();
 
@@ -200,7 +200,6 @@ export async function getGoogleAccessToken(): Promise<string> {
 export function googleServers(token: string): McpServerConfig[] {
   return [
     { key: "gcal", url: CALENDAR_MCP_URL, token },
-    // To enable Gmail, add its scopes (see SCOPES above) and uncomment:
-    // { key: "gmail", url: GMAIL_MCP_URL, token },
+    { key: "gmail", url: GMAIL_MCP_URL, token },
   ];
 }
