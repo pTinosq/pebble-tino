@@ -29,14 +29,20 @@ static bool s_reset_next = true;  // next question starts a new conversation
 static int s_chunks = 0;          // debug: chunks received for current reply
 
 static void show_text(const char *text) {
+  GRect frame = layer_get_frame(scroll_layer_get_layer(s_scroll_layer));
+  int w = frame.size.w - 8;
+
+  // Grow the text layer tall BEFORE measuring — otherwise content-size is
+  // clipped to the current (screen) height and the ScrollLayer won't scroll
+  // past the first screen.
+  text_layer_set_size(s_text_layer, GSize(w, 8000));
   text_layer_set_text(s_text_layer, text);
 
   GSize content = text_layer_get_content_size(s_text_layer);
-  GRect frame = layer_get_frame(scroll_layer_get_layer(s_scroll_layer));
-  content.h += 8;
-  if (content.h < frame.size.h) content.h = frame.size.h;
-  text_layer_set_size(s_text_layer, GSize(frame.size.w, content.h));
-  scroll_layer_set_content_size(s_scroll_layer, GSize(frame.size.w, content.h));
+  int h = content.h + 12;
+  if (h < frame.size.h) h = frame.size.h;
+  text_layer_set_size(s_text_layer, GSize(w, h));
+  scroll_layer_set_content_size(s_scroll_layer, GSize(frame.size.w, h));
   scroll_layer_set_content_offset(s_scroll_layer, GPoint(0, 0), false);
 }
 
