@@ -8,7 +8,7 @@ var secrets = require('./secrets');
 var BACKEND_URL = secrets.BACKEND_URL;
 var ASSISTANT_TOKEN = secrets.ASSISTANT_TOKEN;
 
-var MAX_ANSWER_CHARS = 1200; // must stay under the watch inbox buffer
+var MAX_ANSWER_CHARS = 2000; // must stay under the watch inbox buffer
 
 // Conversation history (prior turns) for multi-turn context. Reset when the
 // watch sends reset=1 (new conversation).

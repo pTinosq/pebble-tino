@@ -8,9 +8,9 @@
 //   UP / DOWN           -> scroll the current answer
 
 #define QUESTION_SIZE 256
-#define DISPLAY_SIZE  2048
+#define DISPLAY_SIZE  3072   // "Q: ...\n\n<answer up to ~2000>"
 #define MAX_TURNS     6      // stored turns for BACK navigation
-#define TURN_SIZE     1200   // per-turn "Q: ...\n\n<answer>"
+#define TURN_SIZE     2400   // per-turn "Q: ...\n\n<answer>"
 
 static Window *s_window;
 static TextLayer *s_text_layer;
@@ -195,7 +195,7 @@ static void init(void) {
   app_message_register_inbox_received(inbox_received);
   app_message_register_inbox_dropped(inbox_dropped);
   app_message_register_outbox_failed(outbox_failed);
-  app_message_open(2048, 256);
+  app_message_open(3072, 512); // inbox holds answers up to ~2000; outbox for question + reset
 
   s_window = window_create();
   window_set_window_handlers(s_window, (WindowHandlers) {
