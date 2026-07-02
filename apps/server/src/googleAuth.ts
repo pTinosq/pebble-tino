@@ -30,12 +30,16 @@ const REDIRECT_URI = `http://localhost:${REDIRECT_PORT}/callback`;
 
 // Calendar + Gmail. These must match the scopes added on the OAuth consent
 // screen, or the login will fail.
+// EXACT scopes the Google MCP servers require (they do a literal scope check —
+// broader scopes like calendar.events / gmail.modify are rejected).
 const SCOPES = (
   process.env.GOOGLE_SCOPES ??
   [
-    "https://www.googleapis.com/auth/calendar.calendarlist",
-    "https://www.googleapis.com/auth/calendar.events",
-    "https://www.googleapis.com/auth/gmail.modify",
+    "https://www.googleapis.com/auth/calendar.calendarlist.readonly",
+    "https://www.googleapis.com/auth/calendar.events.readonly",
+    "https://www.googleapis.com/auth/calendar.events.freebusy",
+    "https://www.googleapis.com/auth/gmail.readonly",
+    "https://www.googleapis.com/auth/gmail.compose",
   ].join(" ")
 ).trim();
 
