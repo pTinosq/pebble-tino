@@ -24,6 +24,7 @@ const SCOPES = (
   process.env.SLACK_SCOPES ??
   [
     "search:read.public",
+    "search:read.private",
     "channels:history",
     "channels:read",
     "users:read",
