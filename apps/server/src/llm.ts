@@ -8,6 +8,7 @@ import { fileURLToPath } from "node:url";
 import { dirname, resolve } from "node:path";
 import { MODEL, OPENROUTER_API_KEY } from "./config.js";
 import type { McpManager } from "./mcp.js";
+import { localToolsAsOpenAI, callLocalTool } from "./localTools.js";
 
 const MAX_STEPS = 6;
 
@@ -48,7 +49,7 @@ export async function askAssistant(
 ): Promise<string> {
   if (!OPENROUTER_API_KEY) throw new Error("OPENROUTER_API_KEY is not set");
 
-  const tools = mcp.getOpenAITools();
+  const tools = [...mcp.getOpenAITools(), ...localToolsAsOpenAI()];
   const messages: ChatMessage[] = [
     { role: "system", content: systemPrompt() },
     ...history,
@@ -88,7 +89,9 @@ export async function askAssistant(
           // leave args empty on malformed JSON
         }
         console.log(`[tool] ${tc.function.name}(${tc.function.arguments})`);
-        const result = await mcp.callTool(tc.function.name, args);
+        // Local tools first; fall through to MCP if not a local tool.
+        const local = await callLocalTool(tc.function.name, args);
+        const result = local !== null ? local : await mcp.callTool(tc.function.name, args);
         messages.push({ role: "tool", tool_call_id: tc.id, content: result });
       }
       continue; // let the model see the tool results

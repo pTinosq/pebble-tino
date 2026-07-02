@@ -12,6 +12,7 @@ import { McpManager } from "./mcp.js";
 import { askAssistant, type TurnMessage } from "./llm.js";
 import { NOTION_MCP_URL, getNotionAccessToken, tokensExist, seedTokensIfNeeded } from "./notionAuth.js";
 import { slackTokensExist, getSlackAccessToken, slackServers, seedSlackIfNeeded } from "./slackAuth.js";
+import { localToolsAsOpenAI } from "./localTools.js";
 
 const mcp = new McpManager();
 const servers = mcpServers();
@@ -66,7 +67,7 @@ function send(res: http.ServerResponse, status: number, payload: unknown): void 
 
 const server = http.createServer((req, res) => {
   if (req.method === "GET" && req.url === "/") {
-    send(res, 200, { ok: true, tools: mcp.getOpenAITools().length });
+    send(res, 200, { ok: true, tools: mcp.getOpenAITools().length + localToolsAsOpenAI().length });
     return;
   }
 
