@@ -74,6 +74,7 @@ export class McpManager {
         name: route.originalName,
         arguments: args,
       });
+      console.log(`[tool] ${name} raw:`, JSON.stringify(result).slice(0, 700));
       const content = (result.content ?? []) as Array<{ type: string; text?: string }>;
       const text = content
         .map((c) => (c.type === "text" ? c.text ?? "" : JSON.stringify(c)))
