@@ -10,6 +10,11 @@ var ASSISTANT_TOKEN = secrets.ASSISTANT_TOKEN;
 
 var MAX_ANSWER_CHARS = 1200; // must stay under the watch inbox buffer
 
+// Conversation history (prior turns) for multi-turn context. Reset when the
+// watch sends reset=1 (new conversation).
+var history = [];
+var MAX_HISTORY = 12; // messages kept (~6 turns)
+
 function sendToWatch(dict) {
   Pebble.sendAppMessage(
     dict,
@@ -47,7 +52,14 @@ function ask(question) {
     try {
       var data = JSON.parse(xhr.responseText);
       if (data.error) { sendError(data.error); return; }
-      sendResponse(data.response);
+      var answer = data.response;
+      // Record the turn so the next question has context.
+      history.push({ role: 'user', content: question });
+      history.push({ role: 'assistant', content: String(answer) });
+      if (history.length > MAX_HISTORY) {
+        history = history.slice(history.length - MAX_HISTORY);
+      }
+      sendResponse(answer);
     } catch (err) {
       sendError('Bad response from server');
     }
@@ -55,7 +67,8 @@ function ask(question) {
   xhr.onerror = function () { sendError('Network error'); };
   xhr.ontimeout = function () { sendError('Request timed out'); };
 
-  xhr.send(JSON.stringify({ question: question }));
+  // Send prior history (not incl. the current question).
+  xhr.send(JSON.stringify({ question: question, history: history }));
 }
 
 Pebble.addEventListener('ready', function () {
@@ -63,7 +76,11 @@ Pebble.addEventListener('ready', function () {
 });
 
 Pebble.addEventListener('appmessage', function (e) {
+  if (e.payload.reset) {
+    history = [];
+    console.log('conversation reset (new)');
+  }
   var question = e.payload.prompt;
-  console.log('question from watch: ' + question);
+  console.log('question from watch: ' + question + ' (history len ' + history.length + ')');
   if (question) ask(question);
 });

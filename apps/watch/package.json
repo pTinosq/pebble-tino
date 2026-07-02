@@ -25,7 +25,8 @@
     "messageKeys": [
       "prompt",
       "response",
-      "error"
+      "error",
+      "reset"
     ],
     "resources": {
       "media": []

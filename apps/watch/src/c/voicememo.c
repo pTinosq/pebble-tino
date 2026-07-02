@@ -1,14 +1,16 @@
 #include <pebble.h>
 
-// "VoiceMemo" — talk to an LLM from your wrist.
-// Flow:
-//   1. Press SELECT -> Dictation API captures your question.
-//   2. The question is sent to the phone (PebbleKit JS) via AppMessage.
-//   3. The JS layer calls OpenRouter over HTTPS and sends the answer back.
-//   4. The answer is shown here (scroll with UP/DOWN).
+// "VoiceMemo" — talk to an LLM from your wrist, with conversation memory.
+// Controls:
+//   SELECT (tap)        -> speak a question / follow-up (keeps context)
+//   SELECT (long press) -> start a NEW conversation (clears context)
+//   BACK                -> page back through earlier turns; exits at the first
+//   UP / DOWN           -> scroll the current answer
 
 #define QUESTION_SIZE 256
 #define DISPLAY_SIZE  2048
+#define MAX_TURNS     6      // stored turns for BACK navigation
+#define TURN_SIZE     1200   // per-turn "Q: ...\n\n<answer>"
 
 static Window *s_window;
 static TextLayer *s_text_layer;
@@ -18,11 +20,14 @@ static DictationSession *s_dictation;
 static char s_question[QUESTION_SIZE];
 static char s_display[DISPLAY_SIZE];
 
+static char s_turns[MAX_TURNS][TURN_SIZE];
+static int s_turn_count = 0;      // number of stored turns
+static int s_view = 0;            // index currently shown
+static bool s_reset_next = true;  // next question starts a new conversation
+
 static void show_text(const char *text) {
   text_layer_set_text(s_text_layer, text);
 
-  // Grow the text layer to its content, then let the scroll layer page
-  // through anything taller than the screen.
   GSize content = text_layer_get_content_size(s_text_layer);
   GRect frame = layer_get_frame(scroll_layer_get_layer(s_scroll_layer));
   content.h += 8;
@@ -30,6 +35,21 @@ static void show_text(const char *text) {
   text_layer_set_size(s_text_layer, GSize(frame.size.w, content.h));
   scroll_layer_set_content_size(s_scroll_layer, GSize(frame.size.w, content.h));
   scroll_layer_set_content_offset(s_scroll_layer, GPoint(0, 0), false);
+}
+
+static void store_turn(const char *text) {
+  if (s_turn_count < MAX_TURNS) {
+    strncpy(s_turns[s_turn_count], text, TURN_SIZE - 1);
+    s_turns[s_turn_count][TURN_SIZE - 1] = '\0';
+    s_turn_count++;
+  } else {
+    for (int i = 1; i < MAX_TURNS; i++) {
+      strncpy(s_turns[i - 1], s_turns[i], TURN_SIZE);
+    }
+    strncpy(s_turns[MAX_TURNS - 1], text, TURN_SIZE - 1);
+    s_turns[MAX_TURNS - 1][TURN_SIZE - 1] = '\0';
+  }
+  s_view = s_turn_count - 1;
 }
 
 // ---- Sending the question to the phone ----
@@ -42,10 +62,13 @@ static void send_question(void) {
     return;
   }
   dict_write_cstring(out, MESSAGE_KEY_prompt, s_question);
+  dict_write_uint8(out, MESSAGE_KEY_reset, s_reset_next ? 1 : 0);
   res = app_message_outbox_send();
   if (res != APP_MSG_OK) {
     show_text("Couldn't send to phone.\n\nPress SELECT to retry.");
+    return;
   }
+  s_reset_next = false; // subsequent questions continue the conversation
 }
 
 // ---- Receiving the answer from the phone ----
@@ -57,6 +80,7 @@ static void inbox_received(DictionaryIterator *iter, void *context) {
   if (resp) {
     snprintf(s_display, sizeof(s_display), "Q: %s\n\n%s",
              s_question, resp->value->cstring);
+    store_turn(s_display);
     show_text(s_display);
     vibes_short_pulse(); // buzz when the answer arrives
   } else if (err) {
@@ -106,14 +130,35 @@ static void dictation_result(DictationSession *session,
   }
 }
 
-// ---- UI ----
+// ---- Buttons ----
 
+// SELECT tap: speak a follow-up (keeps conversation context).
 static void select_click_handler(ClickRecognizerRef recognizer, void *context) {
   dictation_session_start(s_dictation);
 }
 
+// SELECT long-press: start a brand-new conversation.
+static void select_long_click_handler(ClickRecognizerRef recognizer, void *context) {
+  s_turn_count = 0;
+  s_view = 0;
+  s_reset_next = true;
+  show_text("New conversation.\n\nPress SELECT and speak.");
+}
+
+// BACK: page to the previous turn; if already at the first, exit the app.
+static void back_click_handler(ClickRecognizerRef recognizer, void *context) {
+  if (s_view > 0) {
+    s_view--;
+    show_text(s_turns[s_view]);
+  } else {
+    window_stack_pop(true);
+  }
+}
+
 static void click_config_provider(void *context) {
   window_single_click_subscribe(BUTTON_ID_SELECT, select_click_handler);
+  window_long_click_subscribe(BUTTON_ID_SELECT, 0, select_long_click_handler, NULL);
+  window_single_click_subscribe(BUTTON_ID_BACK, back_click_handler);
 }
 
 static void window_load(Window *window) {
@@ -121,7 +166,7 @@ static void window_load(Window *window) {
   GRect bounds = layer_get_bounds(root);
 
   s_scroll_layer = scroll_layer_create(bounds);
-  // Scroll layer owns UP/DOWN; route SELECT to us to start dictation.
+  // Scroll layer owns UP/DOWN; our provider adds SELECT (tap + long) and BACK.
   scroll_layer_set_callbacks(s_scroll_layer, (ScrollLayerCallbacks) {
     .click_config_provider = click_config_provider,
   });
@@ -136,7 +181,7 @@ static void window_load(Window *window) {
   scroll_layer_add_child(s_scroll_layer, text_layer_get_layer(s_text_layer));
   layer_add_child(root, scroll_layer_get_layer(s_scroll_layer));
 
-  show_text("Ask anything.\n\nPress SELECT and speak your question.");
+  show_text("Ask anything.\n\nSELECT: speak\nSELECT hold: new chat\nBACK: previous");
 }
 
 static void window_unload(Window *window) {
@@ -150,7 +195,6 @@ static void init(void) {
   app_message_register_inbox_received(inbox_received);
   app_message_register_inbox_dropped(inbox_dropped);
   app_message_register_outbox_failed(outbox_failed);
-  // Big inbox for LLM answers, small outbox for the question.
   app_message_open(2048, 256);
 
   s_window = window_create();
