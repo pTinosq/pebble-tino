@@ -26,6 +26,7 @@ static char s_turns[MAX_TURNS][TURN_SIZE];
 static int s_turn_count = 0;      // number of stored turns
 static int s_view = 0;            // index currently shown
 static bool s_reset_next = true;  // next question starts a new conversation
+static int s_chunks = 0;          // debug: chunks received for current reply
 
 static void show_text(const char *text) {
   text_layer_set_text(s_text_layer, text);
@@ -58,6 +59,7 @@ static void store_turn(const char *text) {
 
 static void send_question(void) {
   s_answer[0] = '\0'; // reset the accumulator for the new reply
+  s_chunks = 0;
   DictionaryIterator *out;
   AppMessageResult res = app_message_outbox_begin(&out);
   if (res != APP_MSG_OK) {
@@ -86,12 +88,15 @@ static void inbox_received(DictionaryIterator *iter, void *context) {
     if (used < ANSWER_SIZE - 1) {
       strncat(s_answer, resp->value->cstring, ANSWER_SIZE - 1 - used);
     }
+    s_chunks++;
     Tuple *more_t = dict_find(iter, MESSAGE_KEY_more);
-    int more = more_t ? more_t->value->int32 : 0;
+    int more = more_t ? (int) more_t->value->int32 : -1; // -1 = key missing
 
-    snprintf(s_display, sizeof(s_display), "Q: %s\n\n%s", s_question, s_answer);
+    // TEMP debug footer: chunks received, chars accumulated, more-flag value.
+    snprintf(s_display, sizeof(s_display), "Q: %s\n\n%s\n\n[k=%d c=%d more=%d]",
+             s_question, s_answer, s_chunks, (int) strlen(s_answer), more);
     show_text(s_display);
-    if (!more) {
+    if (more == 0) {
       store_turn(s_display);   // full answer received
       vibes_short_pulse();
     }
