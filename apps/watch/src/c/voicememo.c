@@ -26,7 +26,6 @@ static char s_turns[MAX_TURNS][TURN_SIZE];
 static int s_turn_count = 0;      // number of stored turns
 static int s_view = 0;            // index currently shown
 static bool s_reset_next = true;  // next question starts a new conversation
-static int s_chunks = 0;          // debug: chunks received for current reply
 
 static void show_text(const char *text) {
   GRect frame = layer_get_frame(scroll_layer_get_layer(s_scroll_layer));
@@ -65,7 +64,6 @@ static void store_turn(const char *text) {
 
 static void send_question(void) {
   s_answer[0] = '\0'; // reset the accumulator for the new reply
-  s_chunks = 0;
   DictionaryIterator *out;
   AppMessageResult res = app_message_outbox_begin(&out);
   if (res != APP_MSG_OK) {
@@ -94,16 +92,10 @@ static void inbox_received(DictionaryIterator *iter, void *context) {
     if (used < ANSWER_SIZE - 1) {
       strncat(s_answer, resp->value->cstring, ANSWER_SIZE - 1 - used);
     }
-    s_chunks++;
     Tuple *more_t = dict_find(iter, MESSAGE_KEY_more);
-    int more = more_t ? (int) more_t->value->int32 : -1; // -1 = key missing
+    int more = more_t ? (int) more_t->value->int32 : 0;
 
-    APP_LOG(APP_LOG_LEVEL_INFO, "chunk k=%d c=%d more=%d",
-            s_chunks, (int) strlen(s_answer), more);
-
-    // TEMP debug at TOP so it's visible even if the bottom is clipped.
-    snprintf(s_display, sizeof(s_display), "[k=%d c=%d more=%d]\n\n%s",
-             s_chunks, (int) strlen(s_answer), more, s_answer);
+    snprintf(s_display, sizeof(s_display), "Q: %s\n\n%s", s_question, s_answer);
     show_text(s_display);
     if (more == 0) {
       store_turn(s_display);   // full answer received
