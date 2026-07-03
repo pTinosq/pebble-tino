@@ -69,10 +69,10 @@ export async function askAssistant(
         messages,
         tools: tools.length ? tools : undefined,
         tool_choice: tools.length ? "auto" : undefined,
-        // Privacy: only route to providers that don't store/train on our data
-        // (your Notion/Slack content flows through here). Set zdr:true for
-        // strict Zero-Data-Retention (may drop preview models).
-        provider: { data_collection: "deny" },
+        // Privacy: strict Zero-Data-Retention — only route to endpoints that
+        // don't retain data, and never to providers that store/train on inputs.
+        // (Your Notion/Slack content flows through here.)
+        provider: { zdr: true, data_collection: "deny" },
       }),
     });
 
