@@ -70,14 +70,23 @@ async function getWeather(args: Record<string, unknown>): Promise<string> {
   const url = new URL("https://api.open-meteo.com/v1/forecast");
   url.searchParams.set("latitude", String(loc.latitude));
   url.searchParams.set("longitude", String(loc.longitude));
-  url.searchParams.set("current", "temperature_2m,apparent_temperature,weather_code");
+  url.searchParams.set(
+    "current",
+    "temperature_2m,apparent_temperature,weather_code,relative_humidity_2m,wind_speed_10m",
+  );
   url.searchParams.set("daily", "temperature_2m_max,temperature_2m_min,precipitation_probability_max");
   url.searchParams.set("timezone", "auto");
   url.searchParams.set("forecast_days", "1");
   const res = await fetch(url);
   if (!res.ok) return `Weather API error: ${res.status}`;
   const d = (await res.json()) as {
-    current?: { temperature_2m?: number; apparent_temperature?: number; weather_code?: number };
+    current?: {
+      temperature_2m?: number;
+      apparent_temperature?: number;
+      weather_code?: number;
+      relative_humidity_2m?: number;
+      wind_speed_10m?: number;
+    };
     daily?: {
       temperature_2m_max?: number[];
       temperature_2m_min?: number[];
@@ -96,7 +105,11 @@ async function getWeather(args: Record<string, unknown>): Promise<string> {
   const range =
     hi !== undefined && lo !== undefined ? ` High ${Math.round(hi)}° / low ${Math.round(lo)}°.` : "";
   const rain = pop !== undefined ? ` ${pop}% rain.` : "";
-  return `${loc.name}: ${now}${feels}, ${desc}.${range}${rain}`;
+  const hum =
+    c.relative_humidity_2m !== undefined ? ` Humidity ${Math.round(c.relative_humidity_2m)}%.` : "";
+  const wind =
+    c.wind_speed_10m !== undefined ? ` Wind ${Math.round(c.wind_speed_10m)} km/h.` : "";
+  return `${loc.name}: ${now}${feels}, ${desc}.${range}${rain}${hum}${wind}`;
 }
 
 export const localTools: LocalTool[] = [
