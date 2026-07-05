@@ -8,7 +8,7 @@ import { fileURLToPath } from "node:url";
 import { dirname, resolve } from "node:path";
 import { MODEL, OPENROUTER_API_KEY } from "./config.js";
 import type { McpManager } from "./mcp.js";
-import { localToolsAsOpenAI, callLocalTool } from "./localTools.js";
+import { localToolsAsOpenAI, callLocalTool } from "./tools/index.js";
 
 const MAX_STEPS = 6;
 
