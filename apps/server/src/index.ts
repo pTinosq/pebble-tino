@@ -12,7 +12,7 @@ import { McpManager } from "./mcp.js";
 import { askAssistant, type TurnMessage } from "./llm.js";
 import { NOTION_MCP_URL, getNotionAccessToken, tokensExist, seedTokensIfNeeded } from "./notionAuth.js";
 import { slackTokensExist, getSlackAccessToken, slackServers, seedSlackIfNeeded } from "./slackAuth.js";
-import { localToolsAsOpenAI } from "./localTools.js";
+import { localToolsAsOpenAI } from "./tools/index.js";
 
 const mcp = new McpManager();
 const servers = mcpServers();
