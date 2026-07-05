@@ -19,8 +19,27 @@ const PROMPT_PATH = resolve(dirname(fileURLToPath(import.meta.url)), "..", "prom
 const PROMPT_TEMPLATE = readFileSync(PROMPT_PATH, "utf8");
 
 function systemPrompt(): string {
-  const today = new Date().toISOString().slice(0, 10);
-  return PROMPT_TEMPLATE.replace(/\{\{\s*today\s*\}\}/g, today).trim();
+  const now = new Date();
+  const today = now.toISOString().slice(0, 10);
+
+  // Human-readable local time with timezone name + UTC offset, so the model can
+  // reason about "what time is it in X" instead of guessing.
+  const tz = Intl.DateTimeFormat().resolvedOptions().timeZone; // e.g. "America/New_York"
+  const nowStr = new Intl.DateTimeFormat("en-US", {
+    weekday: "long",
+    year: "numeric",
+    month: "long",
+    day: "numeric",
+    hour: "2-digit",
+    minute: "2-digit",
+    timeZoneName: "shortOffset",
+    hour12: false,
+    timeZone: tz,
+  }).format(now); // e.g. "Sunday, July 5, 2026, 14:30 GMT-4"
+
+  return PROMPT_TEMPLATE.replace(/\{\{\s*today\s*\}\}/g, today)
+    .replace(/\{\{\s*now\s*\}\}/g, `${nowStr} (${tz})`)
+    .trim();
 }
 
 interface ToolCall {
