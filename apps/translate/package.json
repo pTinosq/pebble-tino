@@ -1,0 +1,36 @@
+{
+  "name": "translate",
+  "author": "pTinosq",
+  "version": "1.0.0",
+  "keywords": ["pebble-app"],
+  "private": true,
+  "dependencies": {},
+  "pebble": {
+    "displayName": "Translate",
+    "uuid": "865513b5-d151-4c92-8001-42566c0191f8",
+    "sdkVersion": "3",
+    "enableMultiJS": true,
+    "targetPlatforms": [
+      "aplite",
+      "basalt",
+      "chalk",
+      "diorite",
+      "emery",
+      "flint",
+      "gabbro"
+    ],
+    "watchapp": {
+      "watchface": false
+    },
+    "messageKeys": [
+      "transcript",
+      "target",
+      "translation",
+      "error",
+      "more"
+    ],
+    "resources": {
+      "media": []
+    }
+  }
+}

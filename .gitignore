@@ -6,12 +6,15 @@ dist/
 .env
 .env.local
 apps/watch/src/pkjs/secrets.js
+apps/translate/src/pkjs/secrets.js
 apps/server/.notion-tokens.json
 apps/server/.slack-tokens.json
 
 # pebble build artifacts
 apps/watch/build/
 apps/watch/.lock-waf*
+apps/translate/build/
+apps/translate/.lock-waf*
 *.pbw
 
 # misc

@@ -3,6 +3,8 @@
 A voice assistant on the **Pebble Time 2**. Dictate a question on your wrist →
 an LLM (Gemini via OpenRouter) answers, using your connected tools (Notion,
 Slack, live data like TfL & weather) → the answer streams back to the watch.
+A companion **Translate** app gives a rolling, phrase-by-phrase translation of
+foreign speech ([`apps/translate`](#translate-app-appstranslate)).
 
 ```
 watch (dictate) → phone JS → backend /ask → LLM (OpenRouter, ZDR)
@@ -15,8 +17,9 @@ watch (answer)  ← phone JS ← backend  ←──────  final text (chu
 
 ```
 apps/
-  watch/    Pebble app (C + PebbleKit JS). Builds with the `pebble` tool.
-  server/   Backend the phone calls. Node/TypeScript. Deployed to Railway.
+  watch/     Pebble app (C + PebbleKit JS). Builds with the `pebble` tool.
+  translate/ Pebble app for live-ish speech translation (own launcher icon).
+  server/    Backend the phone calls. Node/TypeScript. Deployed to Railway.
 ```
 
 The backend is an **MCP client** (connects to remote MCP servers and exposes
@@ -46,6 +49,7 @@ just dev           # run the backend locally (http://localhost:8080)
 just setup-notion  # connect Notion  (browser OAuth)
 just setup-slack   # connect Slack   (needs a Slack app — see below)
 just watch-install # build + install the watch app via CloudPebble
+just apps-install  # build + install ALL watch apps (assistant + translate)
 just watch-phone <ip>   # build + install to a phone by IP
 just health        # ping the deployed backend
 just ask "what's the tube status?"
@@ -151,3 +155,54 @@ just watch-install            # via CloudPebble
 ```
 
 Open the app, press **SELECT**, speak, read the answer.
+
+## Translate app (`apps/translate`)
+
+A separate Pebble app that turns overheard foreign speech into a rolling English
+transcript on your wrist.
+
+```
+watch (dictate phrase) → phone JS → backend /translate → LLM (OpenRouter, ZDR)
+watch (English line)   ← phone JS ← backend  ←────────── translation
+```
+
+Press **SELECT** to start listening. Each phrase it hears is dictated, sent to
+the backend, translated, and appended to the transcript — then it **listens
+again automatically**, so a whole conversation streams in phrase-by-phrase.
+Press **SELECT** again (or **BACK**) to pause; **UP/DOWN** scroll.
+
+| Button | Action |
+|---|---|
+| **SELECT** | Start / pause continuous listening |
+| **SELECT** (hold) | Open the target-language menu |
+| **BACK** | Pause (if listening), else exit |
+| **UP / DOWN** | Scroll the transcript |
+
+**Target language.** Hold SELECT for a menu of target languages (English,
+Greek, French, German, Italian, Spanish, Portuguese); the choice persists across
+launches and shows in the header (e.g. `> English`). Leave it on English to
+understand others; switch it to translate *your own* speech so you can reply.
+The **source** language is never picked here — it's auto-detected by the backend
+(and by the phone's "auto" Voice Language).
+
+**Platform limits (honest expectations).** Pebble's dictation API returns only a
+*final* transcription per utterance — there are no streaming/partial results and
+no per-app language — so this is phrase-by-phrase, not word-by-word. For it to
+capture the spoken language, set the Pebble mobile app's **Voice Language** to
+that language (or the experimental **"auto"**). Dictation needs a Rebble
+subscription.
+
+The backend endpoint is tool-less and low-latency:
+
+```bash
+just translate "καλημέρα, τι κάνεις;"   # -> {"translation":"Good morning, how are you?"}
+```
+
+Build + install like the main watch app:
+
+```bash
+cp apps/translate/src/pkjs/secrets.example.js apps/translate/src/pkjs/secrets.js
+# edit secrets.js: BACKEND_URL (…/translate) + ASSISTANT_TOKEN + TARGET_LANG
+just translate-install         # via CloudPebble
+# or: just translate-phone <your-phone-ip>   /   just translate-emu
+```
