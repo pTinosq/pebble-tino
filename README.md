@@ -173,8 +173,16 @@ Press **SELECT** again (or **BACK**) to pause; **UP/DOWN** scroll.
 | Button | Action |
 |---|---|
 | **SELECT** | Start / pause continuous listening |
+| **SELECT** (hold) | Open the target-language menu |
 | **BACK** | Pause (if listening), else exit |
 | **UP / DOWN** | Scroll the transcript |
+
+**Target language.** Hold SELECT for a menu of target languages (English,
+Greek, French, German, Italian, Spanish, Portuguese); the choice persists across
+launches and shows in the header (e.g. `> English`). Leave it on English to
+understand others; switch it to translate *your own* speech so you can reply.
+The **source** language is never picked here — it's auto-detected by the backend
+(and by the phone's "auto" Voice Language).
 
 **Platform limits (honest expectations).** Pebble's dictation API returns only a
 *final* transcription per utterance — there are no streaming/partial results and

@@ -24,6 +24,7 @@
     },
     "messageKeys": [
       "transcript",
+      "target",
       "translation",
       "error",
       "more"

@@ -49,7 +49,7 @@ function sendError(msg) {
   sendToWatch({ error: String(msg).substring(0, 200) });
 }
 
-function translate(text) {
+function translate(text, target) {
   if (!BACKEND_URL || BACKEND_URL.indexOf('YOUR-APP') !== -1) {
     sendError('Backend URL not set in secrets.js');
     return;
@@ -73,7 +73,7 @@ function translate(text) {
   xhr.onerror = function () { sendError('Network error'); };
   xhr.ontimeout = function () { sendError('Timed out'); };
 
-  xhr.send(JSON.stringify({ text: text, target: TARGET_LANG }));
+  xhr.send(JSON.stringify({ text: text, target: target || TARGET_LANG }));
 }
 
 Pebble.addEventListener('ready', function () {
@@ -82,8 +82,11 @@ Pebble.addEventListener('ready', function () {
 
 Pebble.addEventListener('appmessage', function (e) {
   var text = e.payload.transcript;
+  // The watch sends the target language chosen in its menu; fall back to the
+  // secrets.js default if it's ever absent.
+  var target = e.payload.target || TARGET_LANG;
   if (text) {
-    console.log('phrase from watch: ' + text);
-    translate(text);
+    console.log('phrase from watch -> ' + target + ': ' + text);
+    translate(text, target);
   }
 });
