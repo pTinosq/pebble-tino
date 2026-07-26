@@ -79,6 +79,17 @@ translate-phone ip:
 translate-emu:
     cd apps/translate && pebble build && pebble install --emulator emery
 
+# --- all watch apps ---
+
+# build + install every watch app via CloudPebble
+apps-install: watch-install translate-install
+
+# build + install every watch app to a phone by IP, e.g. `just apps-phone 192.168.1.42`
+apps-phone ip: (watch-phone ip) (translate-phone ip)
+
+# build + install every watch app into the emulator
+apps-emu: watch-emu translate-emu
+
 # --- prod / Railway ---
 
 # deploy: push to main (Railway auto-deploys apps/server)

@@ -49,6 +49,7 @@ just dev           # run the backend locally (http://localhost:8080)
 just setup-notion  # connect Notion  (browser OAuth)
 just setup-slack   # connect Slack   (needs a Slack app — see below)
 just watch-install # build + install the watch app via CloudPebble
+just apps-install  # build + install ALL watch apps (assistant + translate)
 just watch-phone <ip>   # build + install to a phone by IP
 just health        # ping the deployed backend
 just ask "what's the tube status?"
