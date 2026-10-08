@@ -14,7 +14,8 @@ setup:
     set -euo pipefail
     [ -f apps/server/.env ] || cp apps/server/.env.example apps/server/.env
     [ -f apps/watch/src/pkjs/secrets.js ] || cp apps/watch/src/pkjs/secrets.example.js apps/watch/src/pkjs/secrets.js
-    echo "Created apps/server/.env and apps/watch/src/pkjs/secrets.js — now fill them in."
+    [ -f apps/translate/src/pkjs/secrets.js ] || cp apps/translate/src/pkjs/secrets.example.js apps/translate/src/pkjs/secrets.js
+    echo "Created apps/server/.env + secrets.js for watch & translate — now fill them in."
 
 # install all dependencies (npm workspaces)
 install:
@@ -60,6 +61,35 @@ watch-phone ip:
 watch-emu:
     cd apps/watch && pebble build && pebble install --emulator emery
 
+# --- translate app (apps/translate) ---
+
+# build the Translate watch app
+translate-build:
+    cd apps/translate && pebble build
+
+# build + install the Translate app via CloudPebble
+translate-install:
+    cd apps/translate && pebble build && pebble install --cloudpebble
+
+# build + install Translate to a phone by IP, e.g. `just translate-phone 192.168.1.42`
+translate-phone ip:
+    cd apps/translate && pebble build && pebble install --phone {{ip}}
+
+# build + run Translate in the emulator (emery = Pebble Time 2 resolution)
+translate-emu:
+    cd apps/translate && pebble build && pebble install --emulator emery
+
+# --- all watch apps ---
+
+# build + install every watch app via CloudPebble
+apps-install: watch-install translate-install
+
+# build + install every watch app to a phone by IP, e.g. `just apps-phone 192.168.1.42`
+apps-phone ip: (watch-phone ip) (translate-phone ip)
+
+# build + install every watch app into the emulator
+apps-emu: watch-emu translate-emu
+
 # --- prod / Railway ---
 
 # deploy: push to main (Railway auto-deploys apps/server)
@@ -79,4 +109,15 @@ ask question:
       -H 'content-type: application/json' \
       -H "x-assistant-token: $token" \
       --data "$(printf '{"question":"%s"}' '{{question}}')"
+    echo
+
+# translate text via the prod backend, e.g. `just translate "καλημέρα, τι κάνεις;"`
+translate text:
+    #!/usr/bin/env bash
+    set -euo pipefail
+    token=$(grep '^ASSISTANT_TOKEN=' apps/server/.env | cut -d= -f2-)
+    curl -s {{prod_url}}/translate \
+      -H 'content-type: application/json' \
+      -H "x-assistant-token: $token" \
+      --data "$(printf '{"text":"%s"}' '{{text}}')"
     echo
